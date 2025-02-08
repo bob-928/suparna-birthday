@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suparna's 17th Birthday</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to right, pink, silver);
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin-top: 100px;
+        }
+        button {
+            display: block;
+            width: 200px;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Suparna's 17th Birthday Wishes</h1>
+        <button onclick="showPasswordPrompt()">I'm Suparna</button>
+        <button onclick="showFriendForm()">I'm a Friend</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVogHW_XWbTDw4LOcGICyYfoUzDLFOeWs",
+            authDomain: "birthday-8cef5.firebaseapp.com",
+            databaseURL: "https://birthday-8cef5-default-rtdb.firebaseio.com",
+            projectId: "birthday-8cef5",
+            storageBucket: "",
+            messagingSenderId: "402363613741",
+            appId: "1:402363613741:web:f096b20b4b65aee1376ea4"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function showPasswordPrompt() {
+            let password = prompt("Enter the password:");
+            if (password === "penguine") {
+                document.body.innerHTML = `
+                    <h1>I love you so much Suparna</h1>
+                    <p>I will always love you. You are literally my heart.</p>
+                    <button onclick="showWishes()">See Friend Wishes</button>
+                    <div id="wishes"></div>
+                `;
+                loadWishes();
+            } else {
+                alert("Nice try diddy");
+            }
+        }
+
+        function showFriendForm() {
+            document.body.innerHTML = `
+                <h1>Leave a Wish for Suparna</h1>
+                <form id="wishForm">
+                    <input type="text" id="name" placeholder="Your Name" required><br>
+                    <textarea id="wish" placeholder="Your Wish" required></textarea><br>
+                    <input type="file" id="image" accept="image/*"><br>
+                    <button type="submit">Submit</button>
+                </form>
+            `;
+            document.getElementById('wishForm').addEventListener("submit", submitWish);
+        }
+
+        function submitWish(event) {
+            event.preventDefault();
+            let name = document.getElementById("name").value.trim();
+            let wish = document.getElementById("wish").value.trim();
+            let image = document.getElementById("image").files[0];
+            
+            if (!name || !wish) {
+                alert("Please enter your name and wish.");
+                return;
+            }
+            
+            let wishData = { name, wish };
+            
+            if (image) {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    wishData.imageUrl = event.target.result; // Store image as base64
+                    db.ref("wishes").push(wishData, function(error) {
+                        if (error) {
+                            alert("Error saving your wish. Please try again.");
+                        } else {
+                            alert("Thank you for your wish!");
+                            showMainPage();
+                        }
+                    });
+                };
+                reader.readAsDataURL(image);
+            } else {
+                db.ref("wishes").push(wishData, function(error) {
+                    if (error) {
+                        alert("Error saving your wish. Please try again.");
+                    } else {
+                        alert("Thank you for your wish!");
+                        showMainPage();
+                    }
+                });
+            }
+        }
+
+        function showMainPage() {
+            location.reload();
+        }
+
+        function loadWishes() {
+            let wishesContainer = document.getElementById("wishes");
+            db.ref("wishes").on("value", snapshot => {
+                wishesContainer.innerHTML = "";
+                snapshot.forEach(childSnapshot => {
+                    let wish = childSnapshot.val();
+                    let wishElement = `<p><strong>${wish.name}:</strong> ${wish.wish}</p>`;
+                    if (wish.imageUrl) {
+                        wishElement += `<img src="${wish.imageUrl}" width="200"><br>`;
+                    }
+                    wishesContainer.innerHTML += wishElement;
+                });
+            }, function(error) {
+                console.error("Error loading wishes: ", error);
+            });
+        }
+    </script>
+</body>
+</html>
